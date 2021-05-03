@@ -6,21 +6,19 @@ import time
 import copy
 
 def main():
-    for N in [10]:
-        n_mazes_per_size = 1
+    animator = Animator(Maze(3, seed=0))
+    for N in [3, 5, 7, 9]:
+        n_mazes_per_size = 3
         for i in range(n_mazes_per_size):
             print(f'generating maze of size {N} ({i+1}/{n_mazes_per_size})')
             
             # init maze and agent
             maze = Maze(N, seed=(int((i+N)*3.141592653)%2021))
+            print(f'maze generated!')
+            animator.reset(maze)
             agent = Agent(N)
-            animator = Animator(maze)
             
             run_simulation(maze, agent, animator)
-            
-            del maze
-            del agent
-            del animator
             
 def run_simulation(maze, agent, animator):
     next_cell_sanitzed = None

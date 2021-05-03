@@ -28,6 +28,16 @@ class Animator:
         
         self.animate()
     
+    def reset(self, maze):
+        self.N = maze.N
+        self.unit_step = WINDOW_SIZE/self.N
+        
+        self.maze = maze
+        self.next_cell = maze.entrance_cell
+        self.explored_cells = []
+        self.candidate_cells = [maze.entrance_cell]
+        self.path = []
+    
     def animate(self):
         turtle.resetscreen()
         self.pen.penup()
@@ -59,6 +69,11 @@ class Animator:
     def draw_path(self, path):
         self.path = path
         self.wn.update()
+        
+        # self.pen.clear()
+        # self.pen.reset()
+        # self.wn.clear()
+        # self.wn.reset()
         # turtle.clearscreen()
     
     def draw_square(self, loc, c):
