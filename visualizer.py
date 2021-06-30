@@ -1,7 +1,25 @@
 """Maze visualizer.
 
-This module provides a function `visualize` for visualizing maze traversal when given a
+This module provides a function ``visualize`` for visualizing maze traversal when given a
 list of maze states. Each state is a 2D list of tile values.
+
+Example:
+    The ``visualize`` function can be used like this:
+    ::
+        states = [
+            [
+                [0.1, 0.2, 0.3],
+                [0.6, 0.5, 0.4],
+                [0.7, 0.8, 0.9],
+            ],
+            [
+                ["W", "W", "W"],
+                ["T", "T", "T"],
+                ["N", "N", "N"],
+            ],
+        ]
+
+        visualize(states, "path/to/file.gif")
 
 """
 
@@ -69,5 +87,5 @@ def visualize(
         append_images=frames[1:],
         save_all=True,
         duration=delay * 1000,
-        optimize=False
+        optimize=False,
     )
