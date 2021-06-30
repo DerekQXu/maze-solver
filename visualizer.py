@@ -29,12 +29,10 @@ def _map(value: Union[float, str]) -> List[int]:
     """
     colors = {"W": [255, 255, 255], "T": [255, 0, 0], "N": [0, 0, 255]}
 
-    if isinstance(value, float):
-        if 0 <= value <= 1:
-            return [0, round(255 * value), 0]
-    else:
-        if value in colors:
-            return colors[value]
+    if isinstance(value, float) and 0 <= value <= 1:
+        return [0, round(255 * value), 0]
+    elif value in colors:
+        return colors[value]
 
     raise ValueError('Tile state must be "W", "T", "N", or a float between 0 and 1.')
 
