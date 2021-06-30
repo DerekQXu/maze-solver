@@ -69,4 +69,5 @@ def visualize(
         append_images=frames[1:],
         save_all=True,
         duration=delay * 1000,
+        optimize=False
     )
