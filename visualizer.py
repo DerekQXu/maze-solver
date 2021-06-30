@@ -1,7 +1,7 @@
 """Maze visualizer.
 
-This module provides a function ``visualize`` for visualizing maze traversal when given a
-list of maze states. Each state is a 2D list of tile values.
+This module provides a function ``visualize`` for visualizing maze traversal when given
+a list of maze states. Each state is a 2D list of tile values.
 
 Example:
     The ``visualize`` function can be used like this:
