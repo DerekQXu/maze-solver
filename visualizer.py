@@ -60,6 +60,7 @@ def visualize(
     path: Path,
     color: Callable = _map,
     delay: float = 0.5,
+    scale: int = 100,
 ):
     """Creates a GIF based on a list of maze states.
 
@@ -71,6 +72,8 @@ def visualize(
             colors.
         delay (float, optional): The number of seconds between each frame of the GIF.
             Defaults to 0.5.
+        scale (int, optional): The amount of scaling to apply to the image. Defaults to
+            100.
     """
     frames = []
 
@@ -79,11 +82,15 @@ def visualize(
         for i, row in enumerate(matrix):
             for j, tile in enumerate(row):
                 m[i, j] = color(tile)
-        frames.append(Image.fromarray(m, "RGB"))
+        frames.append(
+            Image.fromarray(m, "RGB").resize(
+                (len(matrix) * scale, len(matrix[0]) * scale), Image.NONE
+            )
+        )
 
     frames[0].save(
         fp=path,
-        format="GIF",
+        format="PNG",
         append_images=frames[1:],
         save_all=True,
         duration=delay * 1000,
