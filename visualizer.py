@@ -84,7 +84,7 @@ def visualize(
                 m[i, j] = color(tile)
         frames.append(
             Image.fromarray(m, "RGB").resize(
-                (len(matrix) * scale, len(matrix[0]) * scale), Image.NONE
+                (len(matrix[0]) * scale, len(matrix) * scale), Image.NONE
             )
         )
 
