@@ -1,6 +1,8 @@
 from maze import Maze, Cell
 from agent import Agent
-from config import MAX_COST, MIN_COST, SCALE, BIAS
+from config import MAX_COST, MIN_COST, ROOT_DIR, TICK_SPEED
+from os.path import join
+
 from visualizer import visualize
 from pathlib import Path
 import time
@@ -54,7 +56,7 @@ def run_simulation(mid, maze, agent):
 
     path, path_score = get_path(maze, agent.backtracking_path)
     print('animating...')
-    visualize(animation_li, Path(f'/home/derek/Documents/maze-solver/results/{mid}.gif'), delay=0.05)
+    visualize(animation_li, Path(join(ROOT_DIR,'results',f'{mid}.gif')), delay=TICK_SPEED)
 
     print(f'statistics:\n explored {len(explored_cells)} cells\n path score: {path_score}\n--------------------')
     time.sleep(0.1)

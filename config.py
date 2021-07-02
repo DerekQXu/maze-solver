@@ -5,6 +5,8 @@ SCALE = 2
 BIAS = 0
 
 # animation window parameters
-TICK_SPEED = 50
-WINDOW_SIZE = 400
+TICK_SPEED = 0.1
+# WINDOW_SIZE = 400
 
+# path to the code directory (use \ instead of / if on Windows)
+ROOT_DIR = '/home/derek/Documents/maze-solver/'
