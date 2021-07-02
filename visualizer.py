@@ -45,7 +45,7 @@ def _map(value: Union[float, str]) -> List[int]:
     Returns:
         List[int]: A color in [R, G, B] form.
     """
-    colors = {"W": [255, 255, 255], "T": [255, 0, 0], "N": [0, 0, 255]}
+    colors = {"W": [255, 255, 255], "T": [255, 0, 0], "N": [0, 0, 255], "C": [0, 255, 255]}
 
     if isinstance(value, float) and 0 <= value <= 1:
         return [0, round(255 * value), 0]

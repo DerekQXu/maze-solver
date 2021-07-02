@@ -1,36 +1,37 @@
 from maze import Maze, Cell
-from drawer import Animator
 from agent import Agent
-
+from config import MAX_COST, MIN_COST, SCALE, BIAS
+from visualizer import visualize
+from pathlib import Path
 import time
-import copy
 
 def main():
-    animator = Animator(Maze(3, seed=0))
-    for N in [3, 5, 7, 9]:
-        n_mazes_per_size = 3
+    for N in [5,7,9]:
+        n_mazes_per_size = 1
         for i in range(n_mazes_per_size):
             print(f'generating maze of size {N} ({i+1}/{n_mazes_per_size})')
             
             # init maze and agent
             maze = Maze(N, seed=(int((i+N)*3.141592653)%2021))
             print(f'maze generated!')
-            animator.reset(maze)
+            # animator.reset(maze)
             agent = Agent(N)
-            
-            run_simulation(maze, agent, animator)
-            
-def run_simulation(maze, agent, animator):
-    next_cell_sanitzed = None
+
+            mid = f'{N}x{N}-run{i}'
+            run_simulation(mid, maze, agent)
+
+def run_simulation(mid, maze, agent):
+    next_cell_sanitized = None
     next_adjacent_cells = [maze.entrance_cell]
     candidate_cells = {maze.entrance_cell}
     explored_cells = set()
-    
+
+    animation_li = []
     iteration_count = 0
     while True:
-        time.sleep(0.1)
-        next_cell_sanitzed = agent.select_action(next_adjacent_cells, next_cell_sanitzed)
-        next_cell = get_unsanitized_cell(next_cell_sanitzed, maze)
+        # time.sleep(0.1)
+        next_cell_sanitized = agent.select_action(next_adjacent_cells, next_cell_sanitized)
+        next_cell = get_unsanitized_cell(next_cell_sanitized, maze)
         
         # check if valid action
         assert next_cell in candidate_cells.union(explored_cells)
@@ -40,24 +41,41 @@ def run_simulation(maze, agent, animator):
         
         # get newly reachable cells
         next_adjacent_cells = [get_sanitized_cell(cell) for cell in next_cell.adj_set]
-        
-        animator.draw_frame(next_cell, explored_cells, candidate_cells)
-        
+
+        mat = cvt_to_matrix(maze, candidate_cells, explored_cells, next_cell_sanitized)
+        animation_li.append(mat)
+
         # exit condition
         if agent.done:
             assert maze.end_cell.get_loc() in agent.backtracking_path
             break
         
         iteration_count += 1
-    
-    print('getting path')
+
     path, path_score = get_path(maze, agent.backtracking_path)
-    print(path)
-    print('drawing path')
-    animator.draw_path(path)
+    print('animating...')
+    visualize(animation_li, Path(f'/home/derek/Documents/maze-solver/results/{mid}.gif'), delay=0.05)
+
     print(f'statistics:\n explored {len(explored_cells)} cells\n path score: {path_score}\n--------------------')
     time.sleep(0.1)
- 
+
+def cvt_to_matrix(maze, explored_cells, next_adjacent_cells, cur_cell):
+    matrix = [[0.1 for _ in range(maze.N)] for _ in range(maze.N)]
+    e_keys = [cell.get_loc() for cell in explored_cells]
+    n_keys = [cell.get_loc() for cell in next_adjacent_cells]
+    for (i,j), cell in maze.maze_dict.items():
+        if cell.get_loc() == cur_cell.get_loc():
+            matrix[i][j] = 'C'
+        elif cell.get_loc() in n_keys:
+            matrix[i][j] = 'N'
+        elif cell.get_loc() in e_keys:
+            matrix[i][j] = 'T'
+        elif cell.is_wall:
+            matrix[i][j] = 'W'
+        else:
+            matrix[i][j] = (float(cell.terrain) - MIN_COST) / MAX_COST
+    return matrix
+
 def get_sanitized_cell(cell):
     sanitized_cell = Cell(cell.x, cell.y, cell.terrain, cell.is_wall)
     return sanitized_cell
@@ -85,6 +103,3 @@ def pause(secs):
 
 if __name__ == '__main__':
     main()
-# mz = Maze(30)
-# draw_maze(mz)
-# time.sleep(3)
