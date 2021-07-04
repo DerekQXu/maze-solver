@@ -12,7 +12,10 @@ class Cell:
         self.terrain = terrain
         self.is_wall = is_wall
         self.adj_set = set()
-     
+        self.cost_to_cell = None
+
+    # def __hash__(self):
+    #     return self.get_loc()
     def get_loc(self):
         return self.x, self.y
 

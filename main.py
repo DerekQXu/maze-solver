@@ -1,15 +1,19 @@
-from maze import Maze, Cell
+from maze import Maze
 from agent import Agent
+from utils import PathTracker
 from config import MAX_COST, MIN_COST, ROOT_DIR, TICK_SPEED
-from os.path import join
 
+from os.path import join
+from tqdm import tqdm
 from visualizer import visualize
 from pathlib import Path
 import time
 
+MAX_ITERATIONS = 1000
+
 def main():
-    for N in [5,7,9]:
-        n_mazes_per_size = 1
+    for N in [3,5,10,20,50,100]:
+        n_mazes_per_size = 2
         for i in range(n_mazes_per_size):
             print(f'generating maze of size {N} ({i+1}/{n_mazes_per_size})')
             
@@ -23,16 +27,18 @@ def main():
             run_simulation(mid, maze, agent)
 
 def run_simulation(mid, maze, agent):
-    next_cell_sanitized = None
-    next_adjacent_cells = [maze.entrance_cell]
+    # next_cell_sanitized = None
+    # next_adjacent_cells = [get_sanitized_cell(maze.entrance_cell)]
+    path_tracker = PathTracker(maze.entrance_cell)
     candidate_cells = {maze.entrance_cell}
+    candidate_cells_sanitized = {get_sanitized_cell(maze.entrance_cell)}
     explored_cells = set()
 
     animation_li = []
-    iteration_count = 0
-    while True:
+    for _ in tqdm(range(MAX_ITERATIONS)):
         # time.sleep(0.1)
-        next_cell_sanitized = agent.select_action(next_adjacent_cells, next_cell_sanitized)
+        next_cell_sanitized = agent.select_action(candidate_cells_sanitized)
+
         next_cell = get_unsanitized_cell(next_cell_sanitized, maze)
         
         # check if valid action
@@ -42,21 +48,26 @@ def run_simulation(mid, maze, agent):
         candidate_cells = candidate_cells - explored_cells
         
         # get newly reachable cells
-        next_adjacent_cells = [get_sanitized_cell(cell) for cell in next_cell.adj_set]
+        # next_adjacent_cells = [get_sanitized_cell(cell) for cell in next_cell.adj_set]
+        # agent.update_backtracking_path(
+        #     [get_sanitized_cell(cell) for cell in next_cell.adj_set],
+        #     get_sanitized_cell(next_cell)
+        # )
+        if next_cell != maze.entrance_cell:
+            path_tracker.add_cell(next_cell)
+        candidate_cells_sanitized = {get_sanitized_cell(cell) for cell in candidate_cells}
 
-        mat = cvt_to_matrix(maze, candidate_cells, explored_cells, next_cell_sanitized)
+        mat = cvt_to_matrix(maze, candidate_cells, explored_cells, next_cell)
         animation_li.append(mat)
 
         # exit condition
         if agent.done:
-            assert maze.end_cell.get_loc() in agent.backtracking_path
+            assert path_tracker.is_tracked(maze.end_cell) # maze.end_cell.get_loc() in agent.backtracking_path
             break
-        
-        iteration_count += 1
 
-    path, path_score = get_path(maze, agent.backtracking_path)
+    path, path_score = path_tracker.get_best_path_wrapper(maze.entrance_cell, maze.end_cell), maze.end_cell.cost_to_cell
     print('animating...')
-    visualize(animation_li, Path(join(ROOT_DIR,'results',f'{mid}.gif')), delay=TICK_SPEED)
+    visualize(animation_li, Path(join(ROOT_DIR,'results',f'{mid}.gif')), delay=TICK_SPEED, scale=5)
 
     print(f'statistics:\n explored {len(explored_cells)} cells\n path score: {path_score}\n--------------------')
     time.sleep(0.1)
@@ -79,29 +90,12 @@ def cvt_to_matrix(maze, explored_cells, next_adjacent_cells, cur_cell):
     return matrix
 
 def get_sanitized_cell(cell):
-    sanitized_cell = Cell(cell.x, cell.y, cell.terrain, cell.is_wall)
-    return sanitized_cell
+    return (cell.x, cell.y, cell.terrain)
 
 def get_unsanitized_cell(sanitized_cell, maze):
-    x,y = sanitized_cell.x, sanitized_cell.y
+    x,y,_ = sanitized_cell
     cell = maze.maze_dict[(x,y)]
     return cell
- 
-def get_path(maze, backtrack_dict):
-    path = [maze.end_cell.get_loc()]
-    path_score = maze.end_cell.terrain
-    while maze.entrance_cell.get_loc() not in path:
-        cur_loc = path[-1]
-        last_loc = backtrack_dict[cur_loc]
-        assert last_loc in [cell.get_loc() for cell in maze.maze_dict[cur_loc].adj_set]
-        path.append(last_loc)
-        path_score += maze.maze_dict[last_loc].terrain
-    path = path[::-1]
-    return path, path_score
-
-def pause(secs):
-    init_time = time.time()
-    while time.time() < init_time+secs: pass
 
 if __name__ == '__main__':
     main()
