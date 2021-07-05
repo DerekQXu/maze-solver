@@ -13,7 +13,7 @@ class Agent():
         # add any extra data_structures you need here!
         ##############################################################
 
-    def select_action(self, candidate_cells):#, last_cell):
+    def select_action(self, candidate_cells, adjacent_cells_to_last_cell, last_cell):
         ##############################################################
         # write your algorithm here!
         action = list(candidate_cells)[int(random.random())*len(candidate_cells)]
@@ -23,8 +23,3 @@ class Agent():
             self.done = True
 
         return action
-
-    def update_backtracking_path(self, adjacent_cells, last_cell):
-        for cell in adjacent_cells:
-            if get_loc(cell) not in self.backtracking_path:
-                self.backtracking_path[get_loc(cell)] = get_loc(last_cell)

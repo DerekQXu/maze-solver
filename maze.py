@@ -3,7 +3,6 @@ from config import MAX_COST, MIN_COST, SCALE, BIAS
 
 import random
 
-
 class Cell:
     def __init__(self, x: int, y: int, terrain: float, is_wall: bool):
         assert x >= 0 and y >= 0 and terrain > 0, print(x,y,terrain)
@@ -44,10 +43,6 @@ class Maze:
         
         # add walls
         self._recursive_maze_generation()
-        # for i in range(self.N-4):
-            # self.maze_dict[(self.N-3,i)].is_wall = True
-        # for i in range(self.N-7, self.N-2):
-            # self.maze_dict[(i,self.N-4)].is_wall = True
         
         # link cells
         self._link_cells()
@@ -89,8 +84,7 @@ class Maze:
                         ].is_wall = True
             else:
                 assert False
-                
-    
+
     def _link_cells(self):
         for (i,j), cell in self.maze_dict.items():
             up_key = (i,j+1)

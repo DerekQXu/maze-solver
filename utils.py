@@ -1,3 +1,4 @@
+import numpy as np
 
 class PathTracker():
     def __init__(self, start_cell):
@@ -81,34 +82,41 @@ class TreeNode():
         self.parent = parent
         self.children = children
 
+def compute_completion_score(explored_cells, N):
+    end_point = np.array([N-1,N-1])
+    start_point = np.array([0,0])
+    max_dist = np.linalg.norm(start_point-end_point)
+    your_dist = min([np.linalg.norm(np.array(list(cell.get_loc()))-end_point) for cell in explored_cells])
+    score = (max_dist-your_dist)/max_dist
+    score = min(1.0,max(0.0,score))
+    return score
+
+def compute_exploration_score(explored_cells, N):
+    score = (N*N-len(explored_cells))/(N*N)
+    score = min(1.0,max(0.0,score))
+    return score
+
+def compute_path_score(path_cost, shortest_path_cost):
+    score = (shortest_path_cost - (path_cost-shortest_path_cost)/2)/shortest_path_cost
+    score = min(1.0,max(0.0,score))
+    return score
+
+def compute_score(found_end, explored_cells, path_cost, N, shortest_path_cost):
+    completion_score = 50.0 * compute_completion_score(explored_cells, N)
+    if found_end:
+        exploration_score = 10.0 * compute_exploration_score(explored_cells, N)
+        path_score = 40.0 * compute_path_score(path_cost, shortest_path_cost)
+    else:
+        exploration_score = 0.0
+        path_score = 0.0
+    breakdown = {
+        'completion_score':completion_score,
+        'exploration_score':exploration_score,
+        'path_score':path_score
+    }
+    score = completion_score + exploration_score + path_score
+    return score, breakdown
+
 def get_loc(sanitized_cell):
     x,y,_ = sanitized_cell
     return x,y
-
-def get_dist(x,y,N):
-    return 0
-
-def calc_score(agent, N, best_path_score, path_score):
-    score = 0
-    if agent.done:
-        score += 50.0
-    else:
-        x,y = agent.path
-        score += (50.0 * get_dist(x,y,N)) / get_dist(0,0,N)
-    score += 50.0*best_path_score/path_score
-    return score
-
-def get_path(maze, agent):
-    if agent.done:
-        path = [maze.end_cell.get_loc()]
-        path_score = maze.end_cell.terrain
-        while maze.entrance_cell.get_loc() not in path:
-            cur_loc = path[-1]
-            last_loc = agent.backtracking_path[cur_loc]
-            assert last_loc in [cell.get_loc() for cell in maze.maze_dict[cur_loc].adj_set]
-            path.append(last_loc)
-            path_score += maze.maze_dict[last_loc].terrain
-        path = path[::-1]
-    else:
-        path, path_score = [], 0
-    return path, path_score
