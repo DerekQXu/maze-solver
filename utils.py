@@ -102,19 +102,24 @@ def compute_path_score(path_cost, shortest_path_cost):
     return score
 
 def compute_score(found_end, explored_cells, path_cost, N, shortest_path_cost):
-    completion_score = 50.0 * compute_completion_score(explored_cells, N)
+    completion_score = 30.0 * compute_completion_score(explored_cells, N)
     if found_end:
         exploration_score = 10.0 * compute_exploration_score(explored_cells, N)
         path_score = 40.0 * compute_path_score(path_cost, shortest_path_cost)
     else:
         exploration_score = 0.0
         path_score = 0.0
+    if path_score >= 40.0 - 1e-8:
+        path_score_bonus = 20.0
+    else:
+        path_score_bonus = 0.0
     breakdown = {
         'completion_score':completion_score,
         'exploration_score':exploration_score,
-        'path_score':path_score
+        'path_score':path_score,
+        'path_score_bonus':path_score_bonus
     }
-    score = completion_score + exploration_score + path_score
+    score = completion_score + exploration_score + path_score + path_score_bonus
     return score, breakdown
 
 def get_loc(sanitized_cell):
