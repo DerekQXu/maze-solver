@@ -5,6 +5,9 @@ MIN_COST = 0.1
 SCALE = 2
 BIAS = 0
 
+# maximum iterations
+MAX_ITER = 1500
+
 # animation window parameters
 TICK_SPEED = 0.0001
 

@@ -1,4 +1,5 @@
 from utils import get_loc
+from config import MIN_COST, MAX_COST, MAX_ITER
 
 import random
 
@@ -16,9 +17,12 @@ class Agent():
     def select_action(self, candidate_cells, adjacent_cells_to_last_cell, last_cell):
         ##############################################################
         # write your algorithm here!
-        action = list(candidate_cells)[int(random.random())*len(candidate_cells)]
+        candidate_cells_li = list(candidate_cells)
+        random_index = int(random.random())*len(candidate_cells_li)
+        action = candidate_cells_li[random_index]
         ##############################################################
 
+        assert action in candidate_cells # you must choose from one of the candidate cells!
         if get_loc(action) == (self.N-1,self.N-1):
             self.done = True
 

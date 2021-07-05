@@ -1,14 +1,12 @@
 from maze import Maze
 from agent import Agent
 from utils import PathTracker, compute_score
-from config import MAX_COST, MIN_COST, ROOT_DIR, TICK_SPEED, ANIMATION_FLAG
+from config import MAX_COST, MIN_COST, ROOT_DIR, TICK_SPEED, ANIMATION_FLAG, MAX_ITER
 
 from os.path import join
 from tqdm import tqdm
 from visualizer import visualize
 from pathlib import Path
-
-MAX_ITERATIONS = 5000
 
 def main():
     score_li = []
@@ -38,7 +36,7 @@ def run_simulation(mid, maze, agent, shortest_path_cost):
     animation_li = []
     found_end = False
     number_iterations = 1
-    for _ in tqdm(range(MAX_ITERATIONS)):
+    for _ in tqdm(range(MAX_ITER)):
         # time.sleep(0.1)
         next_cell_sanitized = \
             agent.select_action(
