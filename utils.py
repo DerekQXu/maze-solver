@@ -1,4 +1,7 @@
-import numpy as np
+from config import NO_LIB
+
+if not NO_LIB:
+    import numpy as np
 
 class PathTracker():
     def __init__(self, start_cell):
@@ -83,10 +86,14 @@ class TreeNode():
         self.children = children
 
 def compute_completion_score(explored_cells, N):
-    end_point = np.array([N-1,N-1])
-    start_point = np.array([0,0])
-    max_dist = np.linalg.norm(start_point-end_point)
-    your_dist = min([np.linalg.norm(np.array(list(cell.get_loc()))-end_point) for cell in explored_cells])
+    if NO_LIB:
+        max_dist = ((N-1)**2 + (N-1)**2)**0.5
+        your_dist = min([((N-1-cell.get_loc()[0])**2+(N-1-cell.get_loc()[1])**2)**0.5 for cell in explored_cells])
+    else:
+        end_point = np.array([N-1,N-1])
+        start_point = np.array([0,0])
+        max_dist = np.linalg.norm(start_point-end_point)
+        your_dist = min([np.linalg.norm(np.array(list(cell.get_loc()))-end_point) for cell in explored_cells])
     score = (max_dist-your_dist)/max_dist
     score = min(1.0,max(0.0,score))
     return score

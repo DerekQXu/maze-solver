@@ -3,14 +3,17 @@ from os.path import join
 from pathlib import Path
 import subprocess
 
-from tqdm import tqdm
-
 from agent import Agent
-from config import ANIMATION_FLAG, MAX_COST, MAX_ITER, MIN_COST, ROOT_DIR, TICK_SPEED
+from config import ANIMATION_FLAG, MAX_COST, MAX_ITER, MIN_COST, ROOT_DIR, TICK_SPEED, NO_LIB
 from maze import Maze
 from utils import PathTracker, compute_score
-from visualizer import visualize
 
+if NO_LIB:
+    tqdm = lambda x: x
+    ANIMATION_FLAG = False
+else:
+    from visualizer import visualize
+    from tqdm import tqdm
 
 def main():
     score_li = []
@@ -44,7 +47,7 @@ def run_simulation(mid, maze, agent, shortest_path_cost):
     for _ in tqdm(range(MAX_ITER)):
         # time.sleep(0.1)
         next_cell_sanitized = agent.select_action(
-            candidate_cells_sanitized,
+            list(candidate_cells_sanitized),
             next_adjacent_cells_sanitized,
             next_cell_sanitized,
         )

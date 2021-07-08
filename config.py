@@ -11,5 +11,8 @@ MAX_ITER = 1500
 # animation window parameters
 TICK_SPEED = 0.0001
 
-# path to the code directory (use \ instead of / if on Windows)
+# path to the code directory (try / as well if on Windows)
 ROOT_DIR = '/home/derek/Documents/maze-solver/'
+
+# for those with dependency issues
+NO_LIB = False 

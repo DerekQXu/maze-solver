@@ -17,9 +17,8 @@ class Agent():
     def select_action(self, candidate_cells, adjacent_cells_to_last_cell, last_cell):
         ##############################################################
         # write your algorithm here!
-        candidate_cells_li = list(candidate_cells)
-        random_index = int(random.random())*len(candidate_cells_li)
-        action = candidate_cells_li[random_index]
+        random_index = int(random.random())*len(candidate_cells)
+        action = candidate_cells[random_index]
         ##############################################################
 
         assert action in candidate_cells # you must choose from one of the candidate cells!
