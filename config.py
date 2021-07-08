@@ -12,7 +12,7 @@ MAX_ITER = 1500
 TICK_SPEED = 0.0001
 
 # path to the code directory (try / as well if on Windows)
-ROOT_DIR = '/home/derek/Documents/maze-solver/'
+ROOT_DIR = '.'
 
 # for those with dependency issues
 NO_LIB = False 
