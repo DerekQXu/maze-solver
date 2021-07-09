@@ -50,8 +50,8 @@ def run_simulation(mid, maze, agent, shortest_path_cost):
             tuple(
                 agent.select_action(
                     [list(cell) for cell in candidate_cells_sanitized],
-                    next_adjacent_cells_sanitized,
-                    next_cell_sanitized,
+                    [list(cell) for cell in next_adjacent_cells_sanitized],
+                    list(next_cell_sanitized),
                 )
             )
 
