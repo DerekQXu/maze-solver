@@ -153,7 +153,7 @@ def cvt_to_matrix(maze, explored_cells, next_adjacent_cells, cur_cell):
 
 
 def get_sanitized_cell(cell):
-    return cell.x, cell.y, cell.terrain
+    return [cell.x, cell.y, cell.terrain]
 
 
 def get_unsanitized_cell(sanitized_cell, maze):
