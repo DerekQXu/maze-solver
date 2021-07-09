@@ -17,7 +17,7 @@ else:
 
 def main():
     score_li = []
-    for N in [5, 10, 30, 50, 100]:
+    for N in [5, 10, 30, 50]:
         n_mazes_per_size = 1
         for i in range(n_mazes_per_size):
             print(f"generating maze of size {N} ({i+1}/{n_mazes_per_size})")
