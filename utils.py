@@ -1,134 +1,177 @@
-from config import NO_LIB
+import os
+from os.path import join
+from pathlib import Path
+import subprocess
 
-if not NO_LIB:
-    import numpy as np
+from agent import Agent
+from config import ANIMATION_FLAG, MAX_COST, MAX_ITER, MIN_COST, ROOT_DIR, TICK_SPEED, NO_LIB
+from maze import Maze
+from utils import PathTracker, compute_score
 
-class PathTracker():
-    def __init__(self, start_cell):
-        start_cell.cost_to_cell = start_cell.terrain
-        self.path_tree = Tree(start_cell, hzsh=lambda x : x.get_loc())
+if NO_LIB:
+    tqdm = lambda x: x
+    ANIMATION_FLAG = False
+else:
+    from visualizer import visualize
+    from tqdm import tqdm
 
-    def is_tracked(self, cell):
-        return self.path_tree.contains(cell)
+def main():
+    score_li = []
+    for N in [5, 10, 20, 30, 40, 50]:
+        n_mazes_per_size = 1
+        for i in range(n_mazes_per_size):
+            print(f"generating maze of size {N} ({i+1}/{n_mazes_per_size})")
 
-    def add_cell(self, new_cell):
-        # link the new cell
-        valid_parents = self.get_valid_parents(new_cell.adj_set)
-        best_parent = min(valid_parents, key=lambda x: x.cost_to_cell)
-        new_cell.cost_to_cell = best_parent.cost_to_cell + new_cell.terrain
-        self.path_tree.link(best_parent, new_cell)
+            # init maze and agent
+            maze = Maze(N, seed=(int((i + N) * 3.141592653) % 2021))
+            print(f"maze generated!")
+            agent = Agent(N)
 
-        # check if better paths emerge from linking this new cell
-        candidate_parent = new_cell
-        propagated_cells = [(cell, candidate_parent) for cell in valid_parents]
-        while propagated_cells:
-            old_cell, candidate_parent = propagated_cells.pop()
-            new_path = candidate_parent.cost_to_cell + old_cell.terrain
-            # if the updated/new cell is a better path -> link
-            if new_path < old_cell.cost_to_cell:
-                old_cell.cost_to_cell = new_path
-                self.path_tree.relink_parent(candidate_parent, old_cell)
-                # check if better paths emerge from linking this updated cell
-                propagated_cells.extend([(cell, old_cell) for cell in self.get_valid_parents(old_cell.adj_set)])
+            mid = f"{N}x{N}-run{i}"
+            shortest_path_cost = get_shortest_path_cost(maze)
+            score_li.append(run_simulation(mid, maze, agent, shortest_path_cost))
+    print(f"final score: {sum(score_li)/len(score_li)}")
 
-    def get_valid_parents(self, adj_cells):
-        valid_parents = [cell for cell in adj_cells if self.path_tree.contains(cell)]
-        assert len(valid_parents) > 0
-        return valid_parents
 
-    def get_best_path_wrapper(self, start_cell, end_cell):
-        if self.path_tree.contains(start_cell) and self.path_tree.contains(end_cell):
-            return self.get_best_path(start_cell, end_cell)
+def run_simulation(mid, maze, agent, shortest_path_cost):
+    next_cell_sanitized = []
+    next_adjacent_cells_sanitized = [get_sanitized_cell(maze.entrance_cell)]
+    path_tracker = PathTracker(maze.entrance_cell)
+    candidate_cells = {maze.entrance_cell}
+    candidate_cells_sanitized = {get_sanitized_cell(maze.entrance_cell)}
+    explored_cells = set()
+
+    animation_li = []
+    found_end = False
+    number_iterations = 1
+    for _ in tqdm(range(MAX_ITER)):
+        # time.sleep(0.1)
+        next_cell_sanitized = \
+            tuple(
+                agent.select_action(
+                    [list(cell) for cell in candidate_cells_sanitized],
+                    next_adjacent_cells_sanitized,
+                    next_cell_sanitized,
+                )
+            )
+
+        # get next action
+        next_cell = get_unsanitized_cell(next_cell_sanitized, maze)
+        assert next_cell in candidate_cells.union(explored_cells)
+
+        # get next adjacent_cells
+        next_adjacent_cells_sanitized = [
+            get_sanitized_cell(cell) for cell in next_cell.adj_set
+        ]
+
+        # get next candidate_cells
+        explored_cells.add(next_cell)
+        candidate_cells.update(next_cell.adj_set)
+        candidate_cells = candidate_cells - explored_cells
+        candidate_cells_sanitized = {
+            get_sanitized_cell(cell) for cell in candidate_cells
+        }
+
+        # update backtracking
+        if next_cell != maze.entrance_cell:
+            path_tracker.add_cell(next_cell)
+
+        # update animation
+        if ANIMATION_FLAG:
+            mat = cvt_to_matrix(maze, candidate_cells, explored_cells, next_cell)
+            animation_li.append(mat)
+
+        # exit condition
+        if agent.done:
+            if path_tracker.is_tracked(maze.end_cell):
+                found_end = True
+            break
+        number_iterations += 1
+
+    score, breakdown = compute_score(
+        found_end,
+        explored_cells,
+        maze.end_cell.cost_to_cell,
+        maze.N,
+        shortest_path_cost,
+    )
+    print(
+        f'score: {score}\n\tbreakdown: {",".join(f"{key}:{val}" for key, val in breakdown.items())}'
+    )
+
+    if ANIMATION_FLAG:
+        print("\tanimating...")
+        visualize(
+            animation_li,
+            Path(join(ROOT_DIR, "results", f"{mid}.gif")),
+            delay=TICK_SPEED,
+            scale=5,
+        )
+    print("============================")
+
+    return score
+
+
+def get_shortest_path_cost(maze):
+    path_tracker = PathTracker(maze.entrance_cell)
+    candidate_cells = {maze.entrance_cell}
+    explored_cells = set()
+
+    while candidate_cells:
+        next_cell = candidate_cells.pop()
+
+        # get next candidate_cells
+        explored_cells.add(next_cell)
+        candidate_cells.update(next_cell.adj_set)
+        candidate_cells = candidate_cells - explored_cells
+
+        # update backtracking
+        if next_cell != maze.entrance_cell:
+            path_tracker.add_cell(next_cell)
+
+    # compute shortest path and clean up cells
+    shortest_path = maze.end_cell.cost_to_cell
+    for cell in maze.maze_dict.values():
+        cell.cost_to_cell = None
+
+    return shortest_path
+
+
+def cvt_to_matrix(maze, explored_cells, next_adjacent_cells, cur_cell):
+    matrix = [[0.1 for _ in range(maze.N)] for _ in range(maze.N)]
+    e_keys = [cell.get_loc() for cell in explored_cells]
+    n_keys = [cell.get_loc() for cell in next_adjacent_cells]
+    for (i, j), cell in maze.maze_dict.items():
+        if cell.get_loc() == cur_cell.get_loc():
+            matrix[i][j] = "C"
+        elif cell.get_loc() in n_keys:
+            matrix[i][j] = "N"
+        elif cell.get_loc() in e_keys:
+            matrix[i][j] = "T"
+        elif cell.is_wall:
+            matrix[i][j] = "W"
         else:
-            return None
+            matrix[i][j] = (float(cell.terrain) - MIN_COST) / MAX_COST
+    return matrix
 
-    def get_best_path(self, start_cell, end_cell):
-        path = [end_cell]
-        cell = end_cell
-        while True:
-            parent = self.path_tree.get_parent_of(cell)
-            path.append(parent)
-            cell = parent
-            if parent.get_loc() == start_cell.get_loc():
-                return path[::-1]
-            if parent is None:
-                assert False # this means the start cell cannot be reached from the end cell!
 
-class Tree():
-    def __init__(self, root, hzsh=lambda x : hash(x)):
-        self.nodes = {hzsh(root): TreeNode(None, set())}
-        self.hzsh = hzsh
+def get_sanitized_cell(cell):
+    return cell.x, cell.y, cell.terrain
 
-    def link(self, parent, child):
-        assert self.hzsh(parent) in self.nodes
-        if self.hzsh(child) in self.nodes:
-            self.nodes[self.hzsh(child)].parent = self.nodes[self.hzsh(parent)]
-        else:
-            self.nodes[self.hzsh(child)] = TreeNode(parent, set())
-        self.nodes[self.hzsh(parent)].children.add(self.nodes[self.hzsh(child)])
 
-    def relink_parent(self, new_parent, child):
-        assert self.hzsh(child) in self.nodes and self.hzsh(new_parent) in self.nodes
-        old_parent = self.nodes[self.hzsh(child)].parent
-        self.nodes[self.hzsh(old_parent)].children.remove(self.nodes[self.hzsh(child)])
-        self.nodes[self.hzsh(new_parent)].children.add(self.nodes[self.hzsh(child)])
-        self.nodes[self.hzsh(child)].parent = new_parent
+def get_unsanitized_cell(sanitized_cell, maze):
+    x, y, _ = sanitized_cell
+    cell = maze.maze_dict[(x, y)]
+    return cell
 
-    def get_parent_of(self, child):
-        return self.nodes[self.hzsh(child)].parent
 
-    def contains(self, child):
-        return self.hzsh(child) in self.nodes
+if __name__ == "__main__":
+    blocked = [] # ["main.py", "maze.py", "perlin.py", "utils.py"] * (os.name == "posix")
 
-class TreeNode():
-    def __init__(self, parent, children):
-        self.parent = parent
-        self.children = children
+    for file in blocked:
+        subprocess.call(["chmod", "000", Path(ROOT_DIR) / file])
 
-def compute_completion_score(explored_cells, N):
-    if NO_LIB:
-        max_dist = ((N-1)**2 + (N-1)**2)**0.5
-        your_dist = min([((N-1-cell.get_loc()[0])**2+(N-1-cell.get_loc()[1])**2)**0.5 for cell in explored_cells])
-    else:
-        end_point = np.array([N-1,N-1])
-        start_point = np.array([0,0])
-        max_dist = np.linalg.norm(start_point-end_point)
-        your_dist = min([np.linalg.norm(np.array(list(cell.get_loc()))-end_point) for cell in explored_cells])
-    score = (max_dist-your_dist)/max_dist
-    score = min(1.0,max(0.0,score))
-    return score
+    main()
 
-def compute_exploration_score(explored_cells, N):
-    score = (N*N-len(explored_cells))/(N*N)
-    score = min(1.0,max(0.0,score))
-    return score
-
-def compute_path_score(path_cost, shortest_path_cost):
-    score = (shortest_path_cost - (path_cost-shortest_path_cost)/2)/shortest_path_cost
-    score = min(1.0,max(0.0,score))
-    return score
-
-def compute_score(found_end, explored_cells, path_cost, N, shortest_path_cost):
-    completion_score = 30.0 * compute_completion_score(explored_cells, N)
-    if found_end:
-        exploration_score = 10.0 * compute_exploration_score(explored_cells, N)
-        path_score = 40.0 * compute_path_score(path_cost, shortest_path_cost)
-    else:
-        exploration_score = 0.0
-        path_score = 0.0
-    if path_score >= 40.0 - 1e-8:
-        path_score_bonus = 20.0
-    else:
-        path_score_bonus = 0.0
-    breakdown = {
-        'completion_score':completion_score,
-        'exploration_score':exploration_score,
-        'path_score':path_score,
-        'path_score_bonus':path_score_bonus
-    }
-    score = completion_score + exploration_score + path_score + path_score_bonus
-    return score, breakdown
-
-def get_loc(sanitized_cell):
-    x,y,_ = sanitized_cell
-    return x,y
+    for file in blocked:
+        subprocess.call(["chmod", "644", Path(ROOT_DIR) / file])
