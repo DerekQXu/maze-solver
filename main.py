@@ -34,7 +34,7 @@ def main():
 
 
 def run_simulation(mid, maze, agent, shortest_path_cost):
-    next_cell_sanitized = None
+    next_cell_sanitized = []
     next_adjacent_cells_sanitized = [get_sanitized_cell(maze.entrance_cell)]
     path_tracker = PathTracker(maze.entrance_cell)
     candidate_cells = {maze.entrance_cell}
@@ -46,11 +46,14 @@ def run_simulation(mid, maze, agent, shortest_path_cost):
     number_iterations = 1
     for _ in tqdm(range(MAX_ITER)):
         # time.sleep(0.1)
-        next_cell_sanitized = agent.select_action(
-            list(candidate_cells_sanitized),
-            next_adjacent_cells_sanitized,
-            next_cell_sanitized,
-        )
+        next_cell_sanitized = \
+            tuple(
+                agent.select_action(
+                    [list(cell) for cell in candidate_cells_sanitized],
+                    next_adjacent_cells_sanitized,
+                    next_cell_sanitized,
+                )
+            )
 
         # get next action
         next_cell = get_unsanitized_cell(next_cell_sanitized, maze)
@@ -153,7 +156,7 @@ def cvt_to_matrix(maze, explored_cells, next_adjacent_cells, cur_cell):
 
 
 def get_sanitized_cell(cell):
-    return [cell.x, cell.y, cell.terrain]
+    return cell.x, cell.y, cell.terrain
 
 
 def get_unsanitized_cell(sanitized_cell, maze):
@@ -163,7 +166,7 @@ def get_unsanitized_cell(sanitized_cell, maze):
 
 
 if __name__ == "__main__":
-    blocked = ["main.py", "maze.py", "perlin.py", "utils.py"] * (os.name == "posix")
+    blocked = [] # ["main.py", "maze.py", "perlin.py", "utils.py"] * (os.name == "posix")
 
     for file in blocked:
         subprocess.call(["chmod", "000", Path(ROOT_DIR) / file])
